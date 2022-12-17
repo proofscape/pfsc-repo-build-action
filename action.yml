@@ -1,5 +1,8 @@
 name: pfsc-repo-build
 description: "Builds a Proofscape content repo"
+branding:
+  icon: 'box'
+  color: 'gray-dark'
 inputs:
   content-repo:
     description: >
