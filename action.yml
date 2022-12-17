@@ -1,0 +1,146 @@
+name: pfsc-repo-build
+description: "Builds a Proofscape content repo"
+inputs:
+  content-repo:
+    description: >
+      The owner/reponame of the Proofscape content repo to be built.
+      Defaults to the value of `github.repository`.
+    default: ${{ github.repository }}
+  content-vers:
+    description: >
+      The version at which to build the Proofscape content repo.
+      If unspecified, build @WIP, meaning the reference or SHA that triggered
+      the workflow, or the default branch if no such event.
+    default: WIP
+  pise-vers:
+    description: >
+      PISE version to use when building. This is the tag for the
+      `proofscape/pise` docker image we use to perform the build.
+      Default: latest
+    default: latest
+  workspace:
+    description: >
+      Working directory, i.e. space in which to do things like checkout the
+      content repo. The latter will be checked out under `./proofscape/lib/gh`
+      relative to this directory. Default is the value of `github.workspace`.
+    default: ${{ github.workspace }}
+  lib-volume:
+    description: >
+      Name of docker volume to use for the lib directory. After the build
+      completes (if successful), this volume will be populated with the
+      contents of `./proofscape/lib`. Can be useful in later steps, if desired.
+      Default: `pfsc-lib`
+    default: pfsc-lib
+  build-volume:
+    description: >
+      Name of docker volume to use for the build directory. After the build
+      completes (if successful), this volume will be populated with the
+      contents of `./proofscape/build`. Can be useful in later steps, if desired.
+      Default: `pfsc-build`
+    default: pfsc-build
+  gdb-volume:
+    description: >
+      Name of docker volume to use for the graphdb directory. After the build
+      completes (if successful), this volume will be populated with the
+      contents of `./proofscape/graphdb`. Can be useful in later steps, if desired.
+      Default: `pfsc-gdb`
+    default: pfsc-gdb
+  container-persist:
+    description: >
+      If "yes", keep the PISE container running after completing.
+      Default "no"
+    default: no
+  container-name:
+    description: >
+      The name of the PISE docker container in which the build takes place.
+      Default: pise
+    default: pise
+  debug-level:
+    description: "Controls diagnostic log output"
+    default: 1
+runs:
+  using: composite
+  steps:
+    # -----------------------------------------
+    # Config
+    - name: Config
+      id: conf
+      shell: bash
+      run: |
+        echo "content-dir=${{inputs.workspace}}/proofscape/lib/gh/${{inputs.content-repo}}" >> $GITHUB_OUTPUT
+        echo "content-libpath=gh/${{inputs.content-repo}}" | sed -e "s#/#.#g" >> $GITHUB_OUTPUT
+    # Make directories
+    - name: Make directories
+      shell: bash
+      run: |
+        mkdir -p ${{steps.conf.outputs.content-dir}}
+    # Checkout
+    - if: ${{ inputs.content-vers == 'WIP' }}
+      name: Checkout @WIP
+      uses: actions/checkout@v3
+      with:
+        path: ${{steps.conf.outputs.content-dir}}
+        repository: ${{inputs.content-repo}}
+    - if: ${{ inputs.content-vers != 'WIP' }}
+      name: Checkout @${{inputs.content-vers}}
+      uses: actions/checkout@v3
+      with:
+        path: ${{steps.conf.outputs.content-dir}}
+        repository: ${{inputs.content-repo}}
+        ref: ${{inputs.content-vers}}
+    # -----------------------------------------
+    # Form and populate a `lib` volume
+    - name: Form and populate lib volume
+      shell: bash
+      run: |
+        docker run --rm --entrypoint=bash \
+          -v ${{inputs.workspace}}/proofscape/lib:/usr/local/share/proofscape_lib:ro \
+          --mount 'type=volume,src=${{inputs.lib-volume}},dst=/proofscape/lib' \
+          proofscape/pise:${{inputs.pise-vers}} \
+          -c "cp -r /usr/local/share/proofscape_lib/* ~/proofscape/lib"
+    # Check population of lib volume
+    - if: ${{ inputs.debug-level >= 1 }}
+      name: Check population of lib volume
+      shell: bash
+      run: |
+        docker run --rm --entrypoint=bash \
+          --mount 'type=volume,src=${{inputs.lib-volume}},dst=/proofscape/lib' \
+          proofscape/pise:${{inputs.pise-vers}} \
+          -c "cd ~/proofscape/lib; ls -l gh/${{inputs.content-repo}}"
+    # Form `build` and `gdb` volumes
+    - name: Form build and gdb volumes
+      shell: bash
+      run: |
+        docker volume create ${{inputs.build-volume}}
+        docker volume create ${{inputs.gdb-volume}}
+    # -----------------------------------------
+    # Give the OCA a normal startup, so that it starts its internal Redis
+    # server. Then we will use `docker exec` to run our build command inside
+    # this container.
+    - name: Start pise
+      shell: bash
+      run: |
+        docker run -d \
+          --name=${{inputs.container-name}} \
+          --mount 'type=volume,src=${{inputs.lib-volume}},dst=/proofscape/lib' \
+          --mount 'type=volume,src=${{inputs.build-volume}},dst=/proofscape/build' \
+          --mount 'type=volume,src=${{inputs.gdb-volume}},dst=/proofscape/graphdb' \
+          proofscape/pise:${{inputs.pise-vers}}
+    # -----------------------------------------
+    # Finally, build the content repo.
+    - name: Build Proofscape content repo
+      shell: bash
+      run: |
+        docker exec \
+          -e FLASK_APP=pfsc \
+          -w /home/pfsc/proofscape/src/pfsc-server \
+          ${{inputs.container-name}} bash -c "\
+            flask pfsc build --auto-deps \
+              -rv ${{steps.conf.outputs.content-libpath}} \
+              -t ${{inputs.content-vers}} \
+          "
+    # Stop the container (optionally)
+    - if: ${{ inputs.container-persist != 'yes' }}
+      name: Stop pise
+      shell: bash
+      run: docker stop pise
