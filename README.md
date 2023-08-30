@@ -54,8 +54,8 @@ example to check on pushes and pull-requests that the repo at least builds.
     # Default: pfsc-gdb
     gdb-volume: ''
 
-    # If "yes", keep the PISE container running after completing.
-    # Default: no
+    # Whether to keep the PISE container running after completing.
+    # Default: false
     container-persist: ''
 
     # The name of the PISE docker container in which the build takes place.
@@ -92,7 +92,7 @@ example to check on pushes and pull-requests that the repo at least builds.
 ```yaml
 - uses: proofscape/pfsc-repo-build-action@v2
   with:
-    container-persist: yes
+    container-persist: true
 - working-directory: proofscape/build/gh/${{ github.repository }}/WIP
   run: |
     docker exec pise bash -c "\

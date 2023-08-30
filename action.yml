@@ -57,9 +57,9 @@ inputs:
     default: pfsc-gdb
   container-persist:
     description: >
-      If "yes", keep the PISE container running after completing.
-      Default "no"
-    default: no
+      Whether to keep the PISE container running after completing.
+    type: boolean
+    default: false
   container-name:
     description: >
       The name of the PISE docker container in which the build takes place.

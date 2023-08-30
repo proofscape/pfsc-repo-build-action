@@ -7,6 +7,8 @@ later.
 A `clean` option is added. (Potentially useful for repeated builds within a
 single job.)
 
+The input type for `container-persist` is changed to `boolean`.
+
 ## 1.1.0 (230830)
 
 Set default PISE version to `0.27.0`, and add documentation stating that
