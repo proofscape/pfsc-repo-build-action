@@ -1,4 +1,4 @@
-# Proofscape repo build action
+# Proofscape repo build action `v2`
 
 This action builds a Proofscape content repo. It can be used in a workflow, for
 example to check on pushes and pull-requests that the repo at least builds.
@@ -6,7 +6,7 @@ example to check on pushes and pull-requests that the repo at least builds.
 ## Usage
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v1
+- uses: proofscape/pfsc-repo-build-action@v2
   with:
     # The owner/reponame of the Proofscape content repo to be built.
     # Default: ${{ github.repository }}
@@ -17,13 +17,17 @@ example to check on pushes and pull-requests that the repo at least builds.
     # the workflow, or the default branch if no such event.
     # Default: WIP
     content-vers: ''
+    
+    # Whether to do a clean build, ensuring all modules are re-read
+    # from source.
+    # Default: false
+    clean: ''
 
     # PISE version to use when building. This is the tag for the
     # `proofscape/pise` docker image we use to perform the build.
-    # Cannot be later than `0.27.x` when using `v1` of this
-    # `pfsc-repo-build-action`. To use PISE versions later than `0.27.x`,
-    # switch to `v2` (or later) of `pfsc-repo-build-action`.
-    # Default: 0.27.0
+    # Must be `0.28.0` or later. To use earlier versions of PISE, must use
+    # `v1` of this `pfsc-repo-build-action`.
+    # Default: latest
     pise-vers: ''
 
     # Working directory, i.e. space in which to do things like checkout the
@@ -72,13 +76,13 @@ example to check on pushes and pull-requests that the repo at least builds.
 ## Build at WIP
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v1
+- uses: proofscape/pfsc-repo-build-action@v2
 ```
 
 ## Build at a numbered version
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v1
+- uses: proofscape/pfsc-repo-build-action@v2
   with:
     content-vers: v3.1.4
 ```
@@ -86,7 +90,7 @@ example to check on pushes and pull-requests that the repo at least builds.
 ## Examine the build results
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v1
+- uses: proofscape/pfsc-repo-build-action@v2
   with:
     container-persist: yes
 - working-directory: proofscape/build/gh/${{ github.repository }}/WIP
