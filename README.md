@@ -20,7 +20,10 @@ example to check on pushes and pull-requests that the repo at least builds.
 
     # PISE version to use when building. This is the tag for the
     # `proofscape/pise` docker image we use to perform the build.
-    # Default: latest
+    # Cannot be later than `0.27.x` when using `v1` of this
+    # `pfsc-repo-build-action`. To use PISE versions later than `0.27.x`,
+    # switch to `v2` (or later) of `pfsc-repo-build-action`.
+    # Default: 0.27.0
     pise-vers: ''
 
     # Working directory, i.e. space in which to do things like checkout the
