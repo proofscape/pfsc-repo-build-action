@@ -24,10 +24,12 @@ inputs:
   pise-vers:
     description: >
       PISE version to use when building. This is the tag for the
-      `proofscape/pise` docker image we use to perform the build.
+      `proofscape/pise` docker image that will be used to perform the build.
       Must be `0.28.0` or later. To use earlier versions of PISE, must use
       `v1` of this `pfsc-repo-build-action`.
-    default: latest
+      No default; this argument is REQUIRED.
+      Legal values include 'latest', as well as numbered versions such
+      as '0.29.1' or '0.30.0'.
   workspace:
     description: >
       Working directory, i.e. space in which to do things like checkout the
@@ -73,6 +75,12 @@ runs:
   steps:
     # -----------------------------------------
     # Config
+    - if: ${{ inputs.pise-vers == '' }}
+      name: Check PISE version
+      shell: bash
+      run: |
+        echo "User error: Please specify desired version of PISE in the pise-vers argument!"
+        exit 1
     - name: Config
       id: conf
       shell: bash

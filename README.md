@@ -1,4 +1,4 @@
-# Proofscape repo build action `v2`
+# Proofscape repo build action `v3`
 
 This action builds a Proofscape content repo. It can be used in a workflow, for
 example to check on pushes and pull-requests that the repo at least builds.
@@ -6,7 +6,7 @@ example to check on pushes and pull-requests that the repo at least builds.
 ## Usage
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v2
+- uses: proofscape/pfsc-repo-build-action@v3
   with:
     # The owner/reponame of the Proofscape content repo to be built.
     # Default: ${{ github.repository }}
@@ -24,10 +24,24 @@ example to check on pushes and pull-requests that the repo at least builds.
     clean: ''
 
     # PISE version to use when building. This is the tag for the
-    # `proofscape/pise` docker image we use to perform the build.
+    # `proofscape/pise` docker image that will be used to perform the build.
     # Must be `0.28.0` or later. To use earlier versions of PISE, must use
     # `v1` of this `pfsc-repo-build-action`.
-    # Default: latest
+    #
+    # No default; this argument is REQUIRED.
+    #
+    # Legal values include 'latest', as well as numbered versions such
+    # as '0.29.1' or '0.30.0'.
+    #
+    # Version 'latest' should be used with caution. Any time a new version
+    # of PISE is released, your workflow may break. This can be a problem,
+    # or can be viewed as a useful way to learn about the release of breaking
+    # changes in new versions of PISE.
+    #
+    # Pinning at a specific numbered version is a more stable approach. Your
+    # workflow will not unexpectedly break, and you can upgrade whenever you
+    # need new features available only in later versions of PISE (possibly also
+    # having to adapt to breaking changes).
     pise-vers: ''
 
     # Working directory, i.e. space in which to do things like checkout the
@@ -76,22 +90,34 @@ example to check on pushes and pull-requests that the repo at least builds.
 ## Build at WIP
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v2
+- uses: proofscape/pfsc-repo-build-action@v3
+  with:
+    pise-vers: latest
 ```
 
 ## Build at a numbered version
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v2
+- uses: proofscape/pfsc-repo-build-action@v3
   with:
+    pise-vers: latest
     content-vers: v3.1.4
+```
+
+## Build with a fixed PISE version
+
+```yaml
+- uses: proofscape/pfsc-repo-build-action@v3
+  with:
+    pise-vers: 0.30.0
 ```
 
 ## Examine the build results
 
 ```yaml
-- uses: proofscape/pfsc-repo-build-action@v2
+- uses: proofscape/pfsc-repo-build-action@v3
   with:
+    pise-vers: latest
     container-persist: true
 - working-directory: proofscape/build/gh/${{ github.repository }}/WIP
   run: |
