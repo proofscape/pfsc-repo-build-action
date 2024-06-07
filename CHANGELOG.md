@@ -1,3 +1,9 @@
+## 3.0.0 (240607)
+
+In version 3, *there is no longer a default PISE version*. You must explicitly
+state which version of PISE you want to use, with the `pise-vers` argument.
+See examples in the README.
+
 ## 2.0.0 (230830)
 
 In version 2, the minimum PISE version is `0.28.0`, and the default is
